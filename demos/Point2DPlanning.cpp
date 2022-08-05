@@ -48,6 +48,8 @@
 #include <boost/filesystem.hpp>
 #include <iostream>
 
+#include <ompl/base/terminationconditions/IterationTerminationCondition.h>
+
 namespace ob = ompl::base;
 namespace og = ompl::geometric;
 
@@ -105,12 +107,22 @@ public:
         goal[0] = goal_row;
         goal[1] = goal_col;
         ss_->setStartAndGoalStates(start, goal);
+
+        // Experiment with termination conditions
+        double timeout = 2;
+        ompl::time::point planning_start = ompl::time::now();
+//        auto termination = ob::plannerOrTerminationCondition(
+//          ob::timedPlannerTerminationCondition(timeout - ompl::time::seconds(ompl::time::now() - planning_start)),
+//          ob::IterationTerminationCondition(1e12));
+        auto termination = ob::PlannerTerminationCondition(ob::IterationTerminationCondition(1e7));
+//        auto termination = ob::timedPlannerTerminationCondition(timeout - ompl::time::seconds(ompl::time::now() - planning_start));
+
         // generate a few solutions; all will be added to the goal;
         for (int i = 0; i < 10; ++i)
         {
             if (ss_->getPlanner())
                 ss_->getPlanner()->clear();
-            ss_->solve();
+            ss_->solve(termination);
         }
         const std::size_t ns = ss_->getProblemDefinition()->getSolutionCount();
         OMPL_INFORM("Found %d solutions", (int)ns);
